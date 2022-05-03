@@ -1,3 +1,73 @@
+@import './variables.less';
+@import './functions.less';
+
 body {
     margin: 0;
+}
+
+#container {
+    .row {
+        overflow: hidden;
+
+        &:first-child .column {
+            border-right-color: @edge-light-border-color;
+            border-bottom-color: @edge-dark-border-color;
+            background-color: @edge-background-color;
+            color: @edge-text-color;
+            text-align: center;
+            &:first-child {
+                border-bottom-color: @edge-light-border-color;
+                position: relative;
+                &:after {
+                    content: '';
+                    border: @triangle-size solid transparent;
+                    border-top-color: #b7b7b7;
+                    position: absolute;
+                    right: -@triangle-size + 3;
+                    bottom: -@triangle-size + 3;
+                    transform: rotate(-45deg);
+                }
+            }
+        }
+
+        .column {
+            float: left;
+            border-right: 1px solid @item-default-border-color;
+            border-bottom: 1px solid @item-default-border-color;
+            box-sizing: border-box;
+            position: relative;
+
+            &:first-child {
+                border-bottom-color: @edge-light-border-color;
+                border-right-color: @edge-dark-border-color;
+                background-color: @edge-background-color;
+                color: @edge-text-color;
+                text-align: center;
+            }
+
+            input {
+                .column-input-style();
+            }
+        }
+    }
+}
+
+#warpper {
+    .drag-rect {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 2px solid #237447;
+        position: absolute;
+    }
+    .selected-rect {
+        background-color: rgba(0, 0, 0, 0.2);
+        border: 2px solid #237447;
+        position: absolute;
+        .column {
+            background-color: @white-color;
+            position: absolute;
+            input {
+                .column-input-style();
+            }
+        }
+    }
 }
