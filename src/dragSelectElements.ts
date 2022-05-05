@@ -4,11 +4,14 @@ import { bindEvent, removeEvent } from './utils';
 export class DragSelectElement {
     startPoint: Point = { x: 0, y: 0 };
     warpperElement: HTMLDivElement;
+    selectedWarpperElement: HTMLDivElement;
     dragRectElement: HTMLDivElement | undefined;
     targetElement: HTMLDivElement | undefined;
     renderData: Array<RenderItem[]>;
     rowSize: number;
     columnSize: number;
+    clickFocusElementCount: number = 0;
+    isFocus: boolean = false;
 
     constructor(
         renderData: Array<RenderItem[]>,
@@ -18,11 +21,28 @@ export class DragSelectElement {
         this.warpperElement = <HTMLDivElement>(
             document.getElementById('warpper')
         );
+        this.selectedWarpperElement = <HTMLDivElement>(
+            document.getElementById('selected-warpper')
+        );
         this.renderData = renderData;
         this.rowSize = rowSize;
         this.columnSize = columnSize;
         const mousemove = (ev: MouseEvent) => {
             this.mousemove(ev);
+        };
+        const mouseup = (ev: MouseEvent) => {
+            this.mouseup(ev);
+
+            removeEvent(
+                document.getElementsByTagName('body')[0],
+                'mousemove',
+                mousemove
+            );
+            removeEvent(
+                document.getElementsByTagName('body')[0],
+                'mouseup',
+                mouseup
+            );
         };
 
         bindEvent(
@@ -37,32 +57,59 @@ export class DragSelectElement {
                     this.startPoint
                 );
 
-                this.dragRectElement = document.createElement('div');
-                this.dragRectElement.className = 'drag-rect';
+                const mousedown = () => {
+                    this.removeAllSelectedRectElements();
 
-                this.removeAllSelectedRectElements();
+                    this.dragRectElement = document.createElement('div');
+                    this.dragRectElement.className = 'drag-rect';
 
-                this.warpperElement.appendChild(this.dragRectElement);
+                    this.dragRectElement.style.left = this.startPoint.x + 'px';
+                    this.dragRectElement.style.top = this.startPoint.y + 'px';
 
-                bindEvent(document, 'mousemove', this.mousemove.bind(this));
-                bindEvent(document, 'mouseup', this.mouseup.bind(this));
+                    this.warpperElement.appendChild(this.dragRectElement);
+
+                    bindEvent(document, 'mousemove', mousemove);
+                    bindEvent(document, 'mouseup', mouseup);
+                };
+
+                if (this.selectedWarpperElement.children.length === 1) {
+                    const selectedRectElement = <HTMLDivElement>(
+                        this.selectedWarpperElement.children[0]
+                    );
+                    if (
+                        selectedRectElement.offsetWidth - 3 ===
+                            this.targetElement?.offsetWidth &&
+                        selectedRectElement.offsetHeight - 3 ===
+                            this.targetElement?.offsetHeight &&
+                        this.isFocus === false
+                    ) {
+                        this.isFocus = true;
+                        selectedRectElement
+                            .getElementsByTagName('input')[0]
+                            .removeAttribute('readonly');
+                        window.setTimeout(() => {
+                            selectedRectElement
+                                .getElementsByTagName('input')[0]
+                                .focus();
+                        });
+                    } else {
+                        this.isFocus = false;
+                        mousedown();
+                    }
+                } else {
+                    this.isFocus = false;
+                    mousedown();
+                }
             }
         );
     }
 
     removeAllSelectedRectElements(): void {
-        for (
-            let i = 0;
-            i < document.querySelectorAll('#warpper .selected-rect').length;
-            i++
-        ) {
+        for (let i = 0; i < this.selectedWarpperElement.children.length; i++) {
             const itemElement: HTMLElement = <HTMLElement>(
-                this.warpperElement.children[i]
+                this.selectedWarpperElement.children[i]
             );
-
-            if (itemElement.className === 'selected-rect') {
-                this.warpperElement.removeChild(itemElement);
-            }
+            this.selectedWarpperElement.removeChild(itemElement);
         }
     }
 
@@ -127,58 +174,62 @@ export class DragSelectElement {
 
         if (startX < endX) {
             if (startY < endY) {
-                var cloneElement: DragElement = <DragElement>(
+                var focusElement: DragElement = <DragElement>(
                     this.renderData[0][0].element?.cloneNode(true)
                 );
-                cloneElement.style.left = '0px';
-                cloneElement.style.top = '0px';
-                cloneElement.setAttribute('row-index', '0');
-                cloneElement.setAttribute('col-index', '0');
+                focusElement.style.left = '0px';
+                focusElement.style.top = '0px';
+                focusElement.setAttribute('row-index', '0');
+                focusElement.setAttribute('col-index', '0');
             } else {
                 let colLastIndex: number = this.columnSize - 1;
-                var cloneElement: DragElement = <DragElement>(
+                var focusElement: DragElement = <DragElement>(
                     this.renderData[0][colLastIndex].element?.cloneNode(true)
                 );
-                cloneElement.style.left = '0px';
-                cloneElement.style.bottom = '0px';
-                cloneElement.setAttribute('row-index', '0');
-                cloneElement.setAttribute('col-index', colLastIndex.toString());
+                focusElement.style.left = '0px';
+                focusElement.style.bottom = '0px';
+                focusElement.setAttribute('row-index', '0');
+                focusElement.setAttribute('col-index', colLastIndex.toString());
             }
         } else {
             if (startY < endY) {
                 let rowLastIndex: number = this.rowSize - 1;
-                var cloneElement: DragElement = <DragElement>(
+                var focusElement: DragElement = <DragElement>(
                     this.renderData[rowLastIndex][0].element?.cloneNode(true)
                 );
-                cloneElement.style.right = '0px';
-                cloneElement.style.top = '0px';
-                cloneElement.setAttribute('row-index', rowLastIndex.toString());
-                cloneElement.setAttribute('col-index', '0');
+                focusElement.style.right = '0px';
+                focusElement.style.top = '0px';
+                focusElement.setAttribute('row-index', rowLastIndex.toString());
+                focusElement.setAttribute('col-index', '0');
             } else {
                 let rowLastIndex: number = this.rowSize - 1;
                 let colLastIndex: number = this.columnSize - 1;
-                var cloneElement: DragElement = <DragElement>(
+                var focusElement: DragElement = <DragElement>(
                     this.renderData[rowLastIndex][
                         colLastIndex
                     ].element?.cloneNode(true)
                 );
-                cloneElement.style.right = '0px';
-                cloneElement.style.bottom = '0px';
-                cloneElement.setAttribute('row-index', rowLastIndex.toString());
-                cloneElement.setAttribute('col-index', colLastIndex.toString());
+                focusElement.style.right = '0px';
+                focusElement.style.bottom = '0px';
+                focusElement.setAttribute('row-index', rowLastIndex.toString());
+                focusElement.setAttribute('col-index', colLastIndex.toString());
             }
         }
 
-        cloneElement.style.width =
-            parseInt(cloneElement.style.width) - 1 + 'px';
-        cloneElement.style.height =
-            parseInt(cloneElement.style.height) - 1 + 'px';
+        focusElement.style.width =
+            parseInt(focusElement.style.width) - 1 + 'px';
+        focusElement.style.height =
+            parseInt(focusElement.style.height) - 1 + 'px';
+        // focusElement.getElementsByTagName('input')[0].onfocus = () => {
+        //     this.isFocus = true;
+        // };
+        // focusElement.getElementsByTagName('input')[0].onblur = () => {
+        //     this.isFocus = false;
+        // };
 
-        selectedRectElement.appendChild(cloneElement);
+        selectedRectElement.appendChild(focusElement);
 
-        (<HTMLElement>document.getElementById('warpper')).appendChild(
-            selectedRectElement
-        );
+        this.selectedWarpperElement.appendChild(selectedRectElement);
 
         if (this.dragRectElement) {
             this.warpperElement.removeChild(
@@ -186,17 +237,6 @@ export class DragSelectElement {
             );
             this.dragRectElement = undefined;
         }
-
-        removeEvent(
-            document.getElementsByTagName('body')[0],
-            'mousemove',
-            this.mousemove.bind(this)
-        );
-        removeEvent(
-            document.getElementsByTagName('body')[0],
-            'mouseup',
-            this.mouseup.bind(this)
-        );
     }
 
     private getTargetElement(
