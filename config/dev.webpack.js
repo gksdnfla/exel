@@ -6,7 +6,7 @@ module.exports = {
         mode: 'development',
         entry: path.join(__dirname, '../src/index.ts'),
         output: {
-            path: path.join(__dirname, '../docs'),
+            path: path.join(__dirname, '../'),
             filename: '[name].js'
         },
         module: {
