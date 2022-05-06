@@ -11,7 +11,6 @@ export class DragSelectElement {
     rowSize: number;
     columnSize: number;
     clickFocusElementCount: number = 0;
-    isFocus: boolean = false;
 
     constructor(
         renderData: Array<RenderItem[]>,
@@ -32,7 +31,7 @@ export class DragSelectElement {
         };
         const mouseup = (ev: MouseEvent) => {
             this.mouseup(ev);
-
+            console.log('mouseup');
             removeEvent(
                 document.getElementsByTagName('body')[0],
                 'mousemove',
@@ -57,49 +56,18 @@ export class DragSelectElement {
                     this.startPoint
                 );
 
-                const mousedown = () => {
-                    this.removeAllSelectedRectElements();
+                this.removeAllSelectedRectElements();
 
-                    this.dragRectElement = document.createElement('div');
-                    this.dragRectElement.className = 'drag-rect';
+                this.dragRectElement = document.createElement('div');
+                this.dragRectElement.className = 'drag-rect';
 
-                    this.dragRectElement.style.left = this.startPoint.x + 'px';
-                    this.dragRectElement.style.top = this.startPoint.y + 'px';
+                this.dragRectElement.style.left = this.startPoint.x + 'px';
+                this.dragRectElement.style.top = this.startPoint.y + 'px';
 
-                    this.warpperElement.appendChild(this.dragRectElement);
+                this.warpperElement.appendChild(this.dragRectElement);
 
-                    bindEvent(document, 'mousemove', mousemove);
-                    bindEvent(document, 'mouseup', mouseup);
-                };
-
-                if (this.selectedWarpperElement.children.length === 1) {
-                    const selectedRectElement = <HTMLDivElement>(
-                        this.selectedWarpperElement.children[0]
-                    );
-                    if (
-                        selectedRectElement.offsetWidth - 3 ===
-                            this.targetElement?.offsetWidth &&
-                        selectedRectElement.offsetHeight - 3 ===
-                            this.targetElement?.offsetHeight &&
-                        this.isFocus === false
-                    ) {
-                        this.isFocus = true;
-                        selectedRectElement
-                            .getElementsByTagName('input')[0]
-                            .removeAttribute('readonly');
-                        window.setTimeout(() => {
-                            selectedRectElement
-                                .getElementsByTagName('input')[0]
-                                .focus();
-                        });
-                    } else {
-                        this.isFocus = false;
-                        mousedown();
-                    }
-                } else {
-                    this.isFocus = false;
-                    mousedown();
-                }
+                bindEvent(document, 'mousemove', mousemove);
+                bindEvent(document, 'mouseup', mouseup);
             }
         );
     }
@@ -171,6 +139,72 @@ export class DragSelectElement {
         selectedRectElement.style.top = selectedRect.top - 2 + 'px';
         selectedRectElement.style.width = selectedRect.width - 1 + 'px';
         selectedRectElement.style.height = selectedRect.height - 1 + 'px';
+        bindEvent(selectedRectElement, 'mousedown', (ev) =>
+            ev.stopPropagation()
+        );
+        bindEvent(selectedRectElement, 'mousemove', (ev) =>
+            ev.stopPropagation()
+        );
+        bindEvent(selectedRectElement, 'mouseup', (ev) => ev.stopPropagation());
+        bindEvent(selectedRectElement, 'click', (ev) => {
+            const inputElement =
+                selectedRectElement.getElementsByTagName('input')[0];
+            const pointElement: HTMLDivElement = <HTMLDivElement>(
+                selectedRectElement.children[0]
+            );
+            inputElement.removeAttribute('readonly');
+            if (
+                pointElement.style.left === '0px' &&
+                pointElement.style.top === '0px'
+            ) {
+                selectedRectElement.style.width =
+                    pointElement.offsetWidth + 'px';
+                selectedRectElement.style.height =
+                    pointElement.offsetHeight + 'px';
+            } else if (
+                pointElement.style.right === '0px' &&
+                pointElement.style.top === '0px'
+            ) {
+                selectedRectElement.style.left =
+                    parseInt(selectedRectElement.style.left) +
+                    parseInt(selectedRectElement.style.width) -
+                    pointElement.offsetWidth +
+                    'px';
+                selectedRectElement.style.width =
+                    pointElement.offsetWidth + 'px';
+                selectedRectElement.style.height =
+                    pointElement.offsetHeight + 'px';
+            } else if (
+                pointElement.style.left === '0px' &&
+                pointElement.style.bottom === '0px'
+            ) {
+                selectedRectElement.style.top =
+                    parseInt(selectedRectElement.style.top) +
+                    parseInt(selectedRectElement.style.height) -
+                    pointElement.offsetHeight +
+                    'px';
+                selectedRectElement.style.width =
+                    pointElement.offsetWidth + 'px';
+                selectedRectElement.style.height =
+                    pointElement.offsetHeight + 'px';
+            } else {
+                selectedRectElement.style.left =
+                    parseInt(selectedRectElement.style.left) +
+                    parseInt(selectedRectElement.style.width) -
+                    pointElement.offsetWidth +
+                    'px';
+                selectedRectElement.style.top =
+                    parseInt(selectedRectElement.style.top) +
+                    parseInt(selectedRectElement.style.height) -
+                    pointElement.offsetHeight +
+                    'px';
+                selectedRectElement.style.width =
+                    pointElement.offsetWidth + 'px';
+                selectedRectElement.style.height =
+                    pointElement.offsetHeight + 'px';
+            }
+            window.setTimeout(() => inputElement.focus());
+        });
 
         if (startX < endX) {
             if (startY < endY) {
@@ -220,12 +254,6 @@ export class DragSelectElement {
             parseInt(focusElement.style.width) - 1 + 'px';
         focusElement.style.height =
             parseInt(focusElement.style.height) - 1 + 'px';
-        // focusElement.getElementsByTagName('input')[0].onfocus = () => {
-        //     this.isFocus = true;
-        // };
-        // focusElement.getElementsByTagName('input')[0].onblur = () => {
-        //     this.isFocus = false;
-        // };
 
         selectedRectElement.appendChild(focusElement);
 
